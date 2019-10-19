@@ -22,3 +22,21 @@ jobs:
           yarn test
         env:
           CI: true
+  build-storybook:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v1
+      - name: Use Node.js 12.x
+        uses: actions/setup-node@v1
+        with:
+          node-version: 12.x
+      - name: yarn install, build
+        run: |
+          yarn install
+          yarn build-storybook -o /tmp/storybook -s static
+      - name: Upload artifact
+        uses: actions/upload-artifact@v1.0.0
+        with:
+          name: storybook
+          path: /tmp/storybook
