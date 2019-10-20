@@ -1,0 +1,43 @@
+version: 2.1
+executors:
+  default:
+    working_directory: ~/app
+    docker:
+      - image: circleci/node:12
+
+commands:
+  setup_yarn:
+    description: "Setup yarn with cache"
+    steps:
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "yarn.lock" }}
+            - v1-dependencies-
+      - run: yarn install
+      - save_cache:
+          paths:
+            - node_modules
+          key: v1-dependencies-{{ checksum "yarn.lock" }}
+
+jobs:
+  test:
+    executor: default
+    steps:
+      - checkout
+      - setup_yarn
+      - run: yarn test --maxWorkers=2
+
+  build_storybook:
+    executor: default
+    steps:
+      - checkout
+      - setup_yarn
+      - run: yarn build-storybook -o /tmp/storybook -s static
+      - store_artifacts:
+          path: /tmp/storybook
+
+workflows:
+  build_and_test:
+    jobs:
+      - test
+      - build_storybook
