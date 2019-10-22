@@ -35,6 +35,9 @@ jobs:
       - run: yarn build-storybook -o /tmp/storybook -s static
       - store_artifacts:
           path: /tmp/storybook
+      - run:
+          name: Run DangerCI
+          command: yarn danger ci -v -d .circleci/danger/dangerfile.ts
 
 workflows:
   build_and_test:
