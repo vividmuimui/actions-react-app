@@ -25,17 +25,41 @@ jobs:
     steps:
       - checkout
       - setup_yarn
+      - run: mkdir -p /tmp/workspace
       - run:
-          command: yarn test --runInBand --coverage --coverageDirectory=/tmp/coverage --reporters=default --reporters=jest-junit
+          command: yarn test --runInBand --coverage --coverageDirectory=/tmp/workspace/coverage --reporters=default --reporters=jest-junit
           environment:
             JEST_JUNIT_OUTPUT_DIR: "/tmp/reports/junit/js-test-results.xml"
       - store_test_results:
           path: /tmp/reports
+      - persist_to_workspace:
+          root: /tmp/workspace
+          paths:
+            - coverage
+
+  build_storybook:
+    executor: default
+    steps:
+      - checkout
+      - setup_yarn
+      - run: mkdir -p /tmp/workspace
+      - run: yarn build-storybook -o /tmp/workspace/storybook -s static
+      - persist_to_workspace:
+          root: /tmp/workspace
+          paths:
+            - storybook
+
+  danger:
+    executor: default
+    steps:
+      - checkout
+      - setup_yarn
+      - attach_workspace:
+          at: /tmp/workspace
       - store_artifacts:
-          path: /tmp/coverage
-      - run: yarn build-storybook -o /tmp/storybook -s static
+          path: /tmp/workspace/coverage
       - store_artifacts:
-          path: /tmp/storybook
+          path: /tmp/workspace/storybook
       - run:
           name: Run DangerCI
           command: yarn danger ci -v -d .circleci/danger/dangerfile.ts
@@ -44,3 +68,8 @@ workflows:
   build:
     jobs:
       - test
+      - build_storybook
+      - danger:
+          requires:
+            - test
+            - build_storybook
